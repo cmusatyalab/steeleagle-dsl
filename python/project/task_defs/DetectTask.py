@@ -45,23 +45,23 @@ class DetectTask(Task):
             await self.control['ctrl'].set_velocity_body(0.0, 0.0, 1.0, 0.0)
             await asyncio.sleep(1)
         logger.info(f"**************Detect Task {self.task_id}: elevate done! **************\n")
-        
+
     async def prepatrol(self, elevation_alt):
         logger.info(f"**************Detect Task {self.task_id}: prepatrol! **************\n")
         await self.elevate(elevation_alt)
-        
+
         logger.info(f"**************Detect Task {self.task_id}: set gimbal pose! **************\n")
         await self.control['ctrl'].set_gimbal_pose(float(self.task_attributes["gimbal_pitch"]), 0.0, 0.0)
-        
+
         logger.info(f"**************Detect Task {self.task_id}: prepatrol done! **************\n")
-        
-         
+
+
     async def report(self, msg):
         reply = await self.control['report'].send_notification(msg)
         self.running_flag = reply['status']
         self.patrol_areas = reply['patrol_areas']
         self.altitude = reply['altitude']
-        
+
     @Task.call_after_exit
     async def run(self):
         logger.info(f"**************Detect Task {self.task_id}: hi this is detect task {self.task_id}**************\n")
@@ -70,11 +70,11 @@ class DetectTask(Task):
         lower_bound = self.task_attributes["lower_bound"]
         upper_bound = self.task_attributes["upper_bound"]
         await self.control['ctrl'].configure_compute(model, lower_bound, upper_bound)
-        
+
         logger.info("Sending notification")
         await self.report("start")
         await self.prepatrol(self.altitude + 5)
-        
+
         logger.info(f"**************Detect Task {self.task_id}: running_flag: {self.running_flag}**************\n")
         while self.running_flag == "running":
             for  area in self.patrol_areas:
@@ -85,14 +85,14 @@ class DetectTask(Task):
                     lat = dest["lat"]
                     alt = self.altitude
                     logger.info(f"**************Detect Task {self.task_id}: move to {lat}, {lng}, {alt}**************\n")
-                    await self.control['ctrl'].set_gps_location(lat, lng, alt)
-                    
+                    await self.control['ctrl'].set_gps_location(lat, lng, alt, velocity=(3.0, 3.0, 90.0))
+
                     # create the transition after the first waypoint
                     if (self.first_wp_flag):
                         await self.control['ctrl'].clear_compute_result("openscout-object")
                         await self.create_transition()
                         self.first_wp_flag = False
-                        
+
                     await asyncio.sleep(1)
             await self.report("finish")
 
