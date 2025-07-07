@@ -141,8 +141,7 @@ class TrackTask(Task):
                 break
 
             telemetry = await self.data.get_telemetry()
-            global_pos = telemetry["global_position"]
-            if global_pos["relative_altitude"] <= altitude:
+            if telemetry["relative_position"]["up"] <= altitude:
                 descended = True
 
             box = None
@@ -152,7 +151,7 @@ class TrackTask(Task):
                     box = det["box"]
                     last_seen = time.time()
                     break
-                
+
             # Found an instance of target, start tracking!
             if box is not None:
                 #await self.control['ctrl'].clear_compute_result("openscout-object")

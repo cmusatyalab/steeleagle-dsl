@@ -38,7 +38,12 @@ class DetectTask(Task):
         logger.info(f"**************Detect Task {self.task_id}: elevate to {altitude}**************\n")
         while True:
             tel = await self.data.get_telemetry()
-            rel_alt = tel['global_position']['relative_altitude']
+            rel_alt = tel['relative_position']['up']
+
+            if tel["data_age_ms"] > 1000:
+                logger.info("Received stale telemetry, continuing")
+                continue
+
             logger.info(f"**************Detect Task {self.task_id}: relative altitude: {rel_alt}**************\n")
             if rel_alt > altitude:
                 break
@@ -77,7 +82,7 @@ class DetectTask(Task):
 
         logger.info(f"**************Detect Task {self.task_id}: running_flag: {self.running_flag}**************\n")
         while self.running_flag == "running":
-            for  area in self.patrol_areas:
+            for area in self.patrol_areas:
                 logger.info(f"**************Detect Task {self.task_id}: patrol area: {area}**************\n")
                 coords = await self.control['report'].get_waypoints(area)
                 for dest in coords:
