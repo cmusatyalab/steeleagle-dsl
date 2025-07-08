@@ -41,7 +41,8 @@ class DetectTask(Task):
             rel_alt = tel['relative_position']['up']
 
             if tel["data_age_ms"] > 1000:
-                logger.info("Received stale telemetry, continuing")
+                logger.info("Received stale telemetry, hovering")
+                await self.control['ctrl'].hover()
                 continue
 
             logger.info(f"**************Detect Task {self.task_id}: relative altitude: {rel_alt}**************\n")
