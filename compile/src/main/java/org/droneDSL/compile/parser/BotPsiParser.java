@@ -184,16 +184,28 @@ public class BotPsiParser implements PsiParser, LightPsiParser {
   }
 
   /* ********************************************************** */
-  // task mission
+  // task_type_decl* task mission
   static boolean file(PsiBuilder b, int l) {
     if (!recursion_guard_(b, l, "file")) return false;
-    if (!nextTokenIs(b, TASK_KW)) return false;
+    if (!nextTokenIs(b, "", TASK_KW, TASK_TYPE_KW)) return false;
     boolean r;
     Marker m = enter_section_(b);
-    r = task(b, l + 1);
+    r = file_0(b, l + 1);
+    r = r && task(b, l + 1);
     r = r && mission(b, l + 1);
     exit_section_(b, m, null, r);
     return r;
+  }
+
+  // task_type_decl*
+  private static boolean file_0(PsiBuilder b, int l) {
+    if (!recursion_guard_(b, l, "file_0")) return false;
+    while (true) {
+      int c = current_position_(b);
+      if (!task_type_decl(b, l + 1)) break;
+      if (!empty_element_parsed_guard_(b, "file_0", c)) break;
+    }
+    return true;
   }
 
   /* ********************************************************** */
@@ -343,26 +355,15 @@ public class BotPsiParser implements PsiParser, LightPsiParser {
   }
 
   /* ********************************************************** */
-  // (TASK_DETECT_KW | TASK_TRACK_KW | TASK_AVOID_KW| TASK_TEST_KW) task_name task_body
+  // task_type task_name task_body
   public static boolean task_decl(PsiBuilder b, int l) {
     if (!recursion_guard_(b, l, "task_decl")) return false;
     boolean r;
     Marker m = enter_section_(b, l, _NONE_, TASK_DECL, "<task decl>");
-    r = task_decl_0(b, l + 1);
+    r = task_type(b, l + 1);
     r = r && task_name(b, l + 1);
     r = r && task_body(b, l + 1);
     exit_section_(b, l, m, r, false, null);
-    return r;
-  }
-
-  // TASK_DETECT_KW | TASK_TRACK_KW | TASK_AVOID_KW| TASK_TEST_KW
-  private static boolean task_decl_0(PsiBuilder b, int l) {
-    if (!recursion_guard_(b, l, "task_decl_0")) return false;
-    boolean r;
-    r = consumeToken(b, TASK_DETECT_KW);
-    if (!r) r = consumeToken(b, TASK_TRACK_KW);
-    if (!r) r = consumeToken(b, TASK_AVOID_KW);
-    if (!r) r = consumeToken(b, TASK_TEST_KW);
     return r;
   }
 
@@ -375,6 +376,47 @@ public class BotPsiParser implements PsiParser, LightPsiParser {
     Marker m = enter_section_(b);
     r = name(b, l + 1);
     exit_section_(b, m, TASK_NAME, r);
+    return r;
+  }
+
+  /* ********************************************************** */
+  // TASK_DETECT_KW | TASK_TRACK_KW | TASK_AVOID_KW | TASK_TEST_KW | name
+  public static boolean task_type(PsiBuilder b, int l) {
+    if (!recursion_guard_(b, l, "task_type")) return false;
+    boolean r;
+    Marker m = enter_section_(b, l, _NONE_, TASK_TYPE, "<task type>");
+    r = consumeToken(b, TASK_DETECT_KW);
+    if (!r) r = consumeToken(b, TASK_TRACK_KW);
+    if (!r) r = consumeToken(b, TASK_AVOID_KW);
+    if (!r) r = consumeToken(b, TASK_TEST_KW);
+    if (!r) r = name(b, l + 1);
+    exit_section_(b, l, m, r, false, null);
+    return r;
+  }
+
+  /* ********************************************************** */
+  // ID
+  public static boolean task_type_body(PsiBuilder b, int l) {
+    if (!recursion_guard_(b, l, "task_type_body")) return false;
+    if (!nextTokenIs(b, ID)) return false;
+    boolean r;
+    Marker m = enter_section_(b);
+    r = consumeToken(b, ID);
+    exit_section_(b, m, TASK_TYPE_BODY, r);
+    return r;
+  }
+
+  /* ********************************************************** */
+  // TASK_TYPE_KW task_type <<braced task_type_body>>
+  public static boolean task_type_decl(PsiBuilder b, int l) {
+    if (!recursion_guard_(b, l, "task_type_decl")) return false;
+    if (!nextTokenIs(b, TASK_TYPE_KW)) return false;
+    boolean r;
+    Marker m = enter_section_(b);
+    r = consumeToken(b, TASK_TYPE_KW);
+    r = r && task_type(b, l + 1);
+    r = r && braced(b, l + 1, BotPsiParser::task_type_body);
+    exit_section_(b, m, TASK_TYPE_DECL, r);
     return r;
   }
 

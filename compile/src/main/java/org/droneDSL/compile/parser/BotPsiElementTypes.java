@@ -20,6 +20,9 @@ public interface BotPsiElementTypes {
   IElementType TASK_BODY = new BotPsiElementType("TASK_BODY");
   IElementType TASK_DECL = new BotPsiElementType("TASK_DECL");
   IElementType TASK_NAME = new BotPsiElementType("TASK_NAME");
+  IElementType TASK_TYPE = new BotPsiElementType("TASK_TYPE");
+  IElementType TASK_TYPE_BODY = new BotPsiElementType("TASK_TYPE_BODY");
+  IElementType TASK_TYPE_DECL = new BotPsiElementType("TASK_TYPE_DECL");
   IElementType TUPLE = new BotPsiElementType("TUPLE");
 
   IElementType ARROW = new BotPsiTokenType("ARROW");
@@ -42,5 +45,6 @@ public interface BotPsiElementTypes {
   IElementType TASK_KW = new BotPsiTokenType("TASK_KW");
   IElementType TASK_TEST_KW = new BotPsiTokenType("TASK_TEST_KW");
   IElementType TASK_TRACK_KW = new BotPsiTokenType("TASK_TRACK_KW");
+  IElementType TASK_TYPE_KW = new BotPsiTokenType("TASK_TYPE_KW");
   IElementType TRANSITION_KW = new BotPsiTokenType("TRANSITION_KW");
 }

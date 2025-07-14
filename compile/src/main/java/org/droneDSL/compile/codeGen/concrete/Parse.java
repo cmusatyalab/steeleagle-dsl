@@ -1,20 +1,13 @@
 package org.droneDSL.compile.codeGen.concrete;
 
-import kala.collection.Seq;
 import kala.collection.immutable.ImmutableMap;
-import kala.collection.immutable.ImmutableSeq;
 import kala.collection.mutable.MutableMap;
 import kala.text.StringSlice;
 import kala.tuple.Tuple;
 import kala.tuple.Tuple2;
 import org.aya.intellij.GenericNode;
-import org.droneDSL.compile.Compiler;
 import org.droneDSL.compile.parser.BotPsiElementTypes;
 import org.jetbrains.annotations.NotNull;
-import org.locationtech.jts.geom.Coordinate;
-
-import java.util.List;
-import java.util.Map;
 
 public interface Parse {
   enum TaskKind {
@@ -176,6 +169,7 @@ public interface Parse {
     var isDetect = task.peekChild(BotPsiElementTypes.TASK_DETECT_KW);
     var isTrack = task.peekChild(BotPsiElementTypes.TASK_TRACK_KW);
     var isAvoid = task.peekChild(BotPsiElementTypes.TASK_AVOID_KW);
+    var isTest = task.peekChild(BotPsiElementTypes.TASK_TEST_KW);
     var attrMap = new AttributeMap();
     task.child(BotPsiElementTypes.TASK_BODY).childrenOfType(BotPsiElementTypes.ATTRIBUTE)
         .forEach(attr -> attrMap.content.put(attr.child(BotPsiElementTypes.ID).tokenText(), attr.child(BotPsiElementTypes.ATTRIBUTE_EXPR)));
@@ -187,8 +181,11 @@ public interface Parse {
       attrMap.kind = TaskKind.Track;
     } else if (isAvoid != null){
       attrMap.kind = TaskKind.Avoid;
-    } else {
+    } else if (isTest != null) {
       attrMap.kind = TaskKind.Test;
+    } else {
+      var name = task.peekChild(BotPsiElementTypes.NAME);
+      // kind =
     }
     return attrMap;
   }

@@ -15,11 +15,14 @@
 }
 
 // file structure
-file ::= task mission
+file ::= task_type_decl* task mission
+
+task_type_decl ::= TASK_TYPE_KW task_type <<braced task_type_body>>
+task_type_body ::= ID
 
 // defining the task
 task ::= TASK_KW <<braced task_decl*>>
-task_decl ::= (TASK_DETECT_KW | TASK_TRACK_KW | TASK_AVOID_KW| TASK_TEST_KW) task_name task_body
+task_decl ::= task_type task_name task_body
 task_body ::= <<braced <<commaSep attributes>>>>
 private attributes ::= attribute*
 attribute ::=  ID <<coloned attribute_expr>>
@@ -27,6 +30,7 @@ attribute ::=  ID <<coloned attribute_expr>>
 attribute_expr ::= NUMBER | name | <<square_bracked <<commaSep <<paren tuple>> >> >> | <<angle_bracked name>> | <<paren tuple>>
 tuple ::= NUMBER COMMA NUMBER COMMA NUMBER
 
+task_type ::= TASK_DETECT_KW | TASK_TRACK_KW | TASK_AVOID_KW | TASK_TEST_KW | name
 task_name ::= name
 name ::= ID
 

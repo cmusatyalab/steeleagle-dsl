@@ -1,8 +1,6 @@
 package org.droneDSL.compile.preprocess.Visualizer;
 
 import org.droneDSL.compile.Compiler;
-import org.droneDSL.compile.preprocess.partition.CorridorPartition;
-import org.droneDSL.compile.preprocess.partition.EdgePartition;
 import org.droneDSL.compile.preprocess.partition.Partition;
 import org.droneDSL.compile.preprocess.partition.SurveyPartition;
 import org.droneDSL.compile.preprocess.waypoints.GeoPoints;
@@ -17,8 +15,9 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionListener;
 import java.awt.geom.Ellipse2D;
 import java.awt.geom.Path2D;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.*;
+import java.util.Map;
 
 public class Visualizer extends JPanel implements MouseMotionListener {
 

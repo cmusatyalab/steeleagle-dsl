@@ -32,6 +32,7 @@ IDENTIFIER=[α-ωa-zA-Z_][α-ωa-zA-Z0-9_'-]*
   {WHITE_SPACE}       { return WHITE_SPACE; }
   {NUMBER}            { return NUMBER; }
   Task                { return TASK_KW; }
+  TaskTypeKw          { /*114514*/ return TASK_TYPE_KW; }
   Detect              { return TASK_DETECT_KW; }
   Track               { return TASK_TRACK_KW; }
   Avoid               { return TASK_AVOID_KW; }

@@ -21,7 +21,8 @@ public final class MissionPlan {
 
   public void codeGenPython(String rootPath) throws IOException {
     var root = Paths.get(rootPath);
-    Files.writeString(root.resolve("Mission.py"), missionContent(), StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
+    Files.writeString(root.resolve("Mission.py"), missionContent(), StandardOpenOption.CREATE,
+        StandardOpenOption.TRUNCATE_EXISTING);
   }
 
   private String missionContent() {
@@ -62,14 +63,14 @@ public final class MissionPlan {
               def %s_transit(triggered_event):
           """, taskID));
 
-      for (var trans: taskContent.transitions){
-        if (Objects.equals(trans.condID(), "done")){
+      for (var trans : taskContent.transitions) {
+        if (Objects.equals(trans.condID(), "done")) {
           isDoneCustomized = true;
         }
         staticMethod.append(String.format("""
-                  if (triggered_event == "%s"):
-                      return "%s"
-          """, trans.condID(), trans.nextTaskID()));
+                    if (triggered_event == "%s"):
+                        return "%s"
+            """, trans.condID(), trans.nextTaskID()));
       }
 
 
@@ -79,12 +80,11 @@ public final class MissionPlan {
 
       missionTask.append(taskContent.generateDefineTaskCode());
 
-      if (!isDoneCustomized){
+      if (!isDoneCustomized) {
         staticMethod.append("""
-                  if (triggered_event == "done"):
-                      return "terminate"
-                      
-          """);
+                    if (triggered_event == "done"):
+                        return "terminate"
+            """);
       }
     });
 
@@ -109,8 +109,7 @@ public final class MissionPlan {
             logger = logging.getLogger(__name__)
             logger.setLevel(logging.INFO)
             from interface.Task import TaskArguments, TaskType
-                        
-                        
+
             class Mission:
 
             """ + staticMethod + missionTrans + missionTask;
