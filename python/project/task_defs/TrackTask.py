@@ -81,14 +81,19 @@ class TrackTask(Task):
         return leash_vec - target_vec
 
     async def error(self, box):
-        target_x_pix = self.image_res[0] - int(((box[3] - box[1]) / 2.0) + box[1])
-        target_y_pix = self.image_res[1] - int(((box[2] - box[0]) / 2.0) + box[0])
-        target_yaw_angle = ((target_x_pix - self.pixel_center[0]) / self.pixel_center[0]) * (self.HFOV / 2)
-        target_pitch_angle = ((target_y_pix - self.pixel_center[1]) / self.pixel_center[1]) * (self.VFOV / 2)
-        target_bottom_pitch_angle = (((self.image_res[1] - box[2]) - self.pixel_center[1]) \
-                / self.pixel_center[1]) * (self.VFOV / 2)
+        img_width = self.image_res[0]
+        img_height = self.image_res[1]
+        # Transform coordinates from origin at top-left of image, with
+        # y-axis positive going downwards, to origin at center of image, with
+        # y-axis positive going upwards
+        target_x_pix = (box[1] + (box[3] - box[1]) / 2) - img_width / 2
+        target_y_pix = img_height / 2 - (box[0] + (box[2] - box[0]) / 2)
 
-        yaw_error = -1 * target_yaw_angle
+        target_yaw_angle = (target_x_pix / img_width) * self.HFOV
+        target_pitch_angle = (target_y_pix / img_height) * self.VFOV
+        target_bottom_pitch_angle = ((img_height / 2 - box[2]) / img_height) * self.VFOV
+
+        yaw_error = target_yaw_angle
         gimbal_error = target_pitch_angle
         follow_error = await self.estimate_distance(target_yaw_angle, target_bottom_pitch_angle)
 
