@@ -67,7 +67,7 @@ class TrackTask(Task):
 
     async def estimate_distance(self, yaw, pitch):
         telemetry = await self.data.get_telemetry()
-        alt = telemetry["global_position"]["relative_altitude"]
+        alt = telemetry["relative_position"]["up"]
         gimbal = telemetry["gimbal_pose"]["pitch"]
 
         vf = [0, 1, 0]
