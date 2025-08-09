@@ -35,29 +35,3 @@ class PatrolArea(ExecutableAction):
             await asyncio.sleep(self.hover_time)
 
 
-
-class TransitionSetup(BaseModel):
-    transition_attributes: dict  # e.g., {"object_detection": {"target": "car"}, "timeout": {"seconds": 10}}
-    task_id: str
-    trans_active: list
-    trans_active_lock: asyncio.Lock
-    trigger_event_queue: asyncio.Queue
-
-    async def execute(self, context):
-        transition_context = TransitionContext(
-            task_id=self.task_id,
-            trans_active=self.trans_active,
-            trans_active_lock=self.trans_active_lock,
-            trigger_event_queue=self.trigger_event_queue,
-        )
-
-        context["transitions"] = []  # Store running transitions here
-
-        for name, args in self.transition_attributes.items():
-            cls = TRANSITION_REGISTRY.get(name)
-            if not cls:
-                raise ValueError(f"Unknown transition type: {name}")
-
-            transition = cls(context=transition_context, **args)
-            await transition.start()
-            context["transitions"].append(transition)

@@ -153,3 +153,21 @@ class TaskManager:
         finally:
             await self.stop_task()
             logger.info("TaskManager shutdown complete")
+
+
+    ## future running logic for tasks with transitions
+    async def run_task_with_transitions(self, task, transitions, context):
+        task_coro = asyncio.create_task(task.execute(context))
+        transition_coros = [
+            asyncio.create_task(trans.monitor(context)) for trans in transitions
+        ]
+
+        done, _ = await asyncio.wait(
+            [*transition_coros],
+            return_when=asyncio.FIRST_COMPLETED
+        )
+
+        for d in done:
+            event = await d
+            logger.info(f"Event triggered: {event}")
+            return event

@@ -67,3 +67,16 @@ dronedsl/
 
 ├── requirements.txt
 └── README.md
+
+
+
+
+
+transition can be specified
+inlcude action and events from other file
+
+to do:
+geopoints partitoner
+include mission from other file
+compilation checking
+

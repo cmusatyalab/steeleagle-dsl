@@ -1,12 +1,6 @@
-from pydantic import BaseModel, Field
-import asyncio
+
+from base import ExecutableAction
 from typing import Optional
-
-# Base class to enforce the execute interface
-class ExecutableAction(BaseModel):
-    async def execute(self, context):
-        raise NotImplementedError
-
 
 # ===== Low-Level Actions =====
 
