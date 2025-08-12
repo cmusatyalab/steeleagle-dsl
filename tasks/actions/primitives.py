@@ -1,29 +1,30 @@
 
-from base import ExecutableAction
+from tasks.base import ExecutableAction
 from typing import Optional
+from compiler.registry import register_action
 
 # ===== Low-Level Actions =====
-
+@register_action
 class TakeOff(ExecutableAction):
     async def execute(self, context):
         return await context['ctrl'].take_off()
 
-
+@register_action
 class Land(ExecutableAction):
     async def execute(self, context):
         return await context['ctrl'].land()
 
-
+@register_action
 class ReturnToHome(ExecutableAction):
     async def execute(self, context):
         return await context['ctrl'].rth()
 
-
+@register_action
 class Hover(ExecutableAction):
     async def execute(self, context):
         return await context['ctrl'].hover()
 
-
+@register_action
 class SetGPSLocation(ExecutableAction):
     lat: float
     lng: float
@@ -33,7 +34,7 @@ class SetGPSLocation(ExecutableAction):
     async def execute(self, context):
         return await context['ctrl'].set_gps_location(self.lat, self.lng, self.alt, self.bearing)
 
-
+@register_action
 class SetRelativePositionENU(ExecutableAction):
     north: float
     east: float
@@ -43,7 +44,7 @@ class SetRelativePositionENU(ExecutableAction):
     async def execute(self, context):
         return await context['ctrl'].set_relative_position_enu(self.north, self.east, self.up, self.angle)
 
-
+@register_action
 class SetRelativePositionBody(ExecutableAction):
     forward: float
     right: float
@@ -53,7 +54,7 @@ class SetRelativePositionBody(ExecutableAction):
     async def execute(self, context):
         return await context['ctrl'].set_relative_position_body(self.forward, self.right, self.up, self.angle)
 
-
+@register_action
 class SetVelocityENU(ExecutableAction):
     north_vel: float
     east_vel: float
@@ -63,7 +64,7 @@ class SetVelocityENU(ExecutableAction):
     async def execute(self, context):
         return await context['ctrl'].set_velocity_enu(self.north_vel, self.east_vel, self.up_vel, self.angle_vel)
 
-
+@register_action
 class SetVelocityBody(ExecutableAction):
     forward_vel: float
     right_vel: float
@@ -73,7 +74,7 @@ class SetVelocityBody(ExecutableAction):
     async def execute(self, context):
         return await context['ctrl'].set_velocity_body(self.forward_vel, self.right_vel, self.up_vel, self.angle_vel)
 
-
+@register_action
 class SetGimbalPose(ExecutableAction):
     pitch: float
     roll: float = 0.0
@@ -82,14 +83,14 @@ class SetGimbalPose(ExecutableAction):
     async def execute(self, context):
         return await context['ctrl'].set_gimbal_pose(self.pitch, self.roll, self.yaw)
 
-
+@register_action
 class ClearComputeResult(ExecutableAction):
     compute_type: str
 
     async def execute(self, context):
         return await context['ctrl'].clear_compute_result(self.compute_type)
 
-
+@register_action
 class ConfigureCompute(ExecutableAction):
     model: str
     lower_bound: tuple[int, int, int]

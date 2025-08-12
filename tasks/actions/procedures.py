@@ -1,6 +1,5 @@
-from pydantic import BaseModel
 from typing import List
-from actions import ExecutableAction, SetGimbalPose, SetGPSLocation
+from tasks.actions.primitives import ExecutableAction, SetGimbalPose, SetGPSLocation
 import asyncio
 
 

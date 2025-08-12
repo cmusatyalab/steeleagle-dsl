@@ -1,5 +1,3 @@
-# parser/parser.py
-
 from lark import Lark
 import os
 

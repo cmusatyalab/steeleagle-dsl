@@ -1,4 +1,4 @@
-from lark import Lark, Transformer
+from lark import Lark
 
 # Load the grammar file
 with open("../grammar/dronedsl.lark", "r") as f:

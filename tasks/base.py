@@ -1,36 +1,16 @@
-<<<<<<< HEAD
+from pydantic import BaseModel, ConfigDict
 
-from pydantic import BaseModel, Field
+class Executable(BaseModel):
+    # Strict validation; allow non-pydantic objects in fields if needed
+    model_config = ConfigDict(extra='forbid', arbitrary_types_allowed=True)
 
-
-task_registry = {}
-
-def register_task(cls):
-    task_registry[cls.__name__] = cls
-    return cls
-
-# Base class to enforce the execute interface
-class ExecutableAction(BaseModel):
     async def execute(self, context):
         raise NotImplementedError
-=======
-# tasks/base.py
 
-from typing import Dict, Type
-from pydantic import BaseModel
+class ExecutableAction(Executable):
+    """Marker base for actions (things you execute)."""
+    pass
 
-# Base class that all tasks should inherit
-class TaskIR(BaseModel):
-    async def execute(self, context):
-        raise NotImplementedError()
-
-# Central registry
-task_registry: Dict[str, Type[TaskIR]] = {}
-
-# Decorator to register a task
-def register_task(name: str):
-    def wrapper(cls: Type[TaskIR]):
-        task_registry[name] = cls
-        return cls
-    return wrapper
->>>>>>> origin/grammar-loose-python
+class ExecutableEvent(Executable):
+    """Marker base for events (things you wait/observe)."""
+    pass
