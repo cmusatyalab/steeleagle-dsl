@@ -13,8 +13,10 @@ parser = Lark(grammar, parser="lalr", start="start")
 
 dsl_code_naive = """
 Actions:
-  TakeOff takeoff1 (test: nope)
+  TakeOff takeoff1
   Land   land1
+  SetRelativePositionENU set (north: 10, east: 20, up: 5, angle: 90)
+  Test test1 (param: value)
 
 Mission:
   Start takeoff1
@@ -25,6 +27,7 @@ Actions:
   Patrol patrol1 (area: sectorA)
   Land   land1
   Avoid  avoid1 (sensitivity: high)
+  Land12123213   test1 (param: value)
 
 Events:
   HSVDetect person_detected (target: person)
@@ -36,6 +39,7 @@ Mission:
   During patrol1:
     person_detected -> avoid1
     patrol_timeout  -> land1
+    
     # done is implicit: patrol_done -> land1
 
   During avoid1:

@@ -1,28 +1,24 @@
-# class DetectTask(PatrolTask):
-#     model: str
-#     lower_bound: tuple[int, int, int]
-#     upper_bound: tuple[int, int, int]
-#     transition_config: dict
-#     task_id: str
-#     trans_active: object
-#     trans_active_lock: object
-#     trigger_event_queue: object
+# tasks/actions/detect_patrol.py
+from __future__ import annotations
 
-#     async def execute(self, context):
-#         await ConfigureDetection(
-#             model=self.model,
-#             lower=self.lower_bound,
-#             upper=self.upper_bound
-#         ).execute(context)
+from pydantic import Field
+from compiler.registry import register_action
+from tasks.actions.procedures import PatrolArea, PrePatrolSequence
+from tasks.actions.primitives import ConfigureCompute, ClearComputeResult
 
-#         await super().execute(context)  # Run patrol sequence
+@register_action
+class DetectPatrol(PatrolArea):
 
-#         # After first waypoint
-#         await ClearDetectionBuffer().execute(context)
-#         await DetectTransitionSetup(
-#             transition_attributes=self.transition_config,
-#             task_id=self.task_id,
-#             trans_active=self.trans_active,
-#             trans_active_lock=self.trans_active_lock,
-#             trigger_event_queue=self.trigger_event_queue
-#         ).execute(context)
+    prepatrol: PrePatrolSequence = Field(..., description="Run before the patrol starts, e.g., to elevate and set gimbal pose")
+    compute_config: ConfigureCompute = Field(..., description="Set model + HSV bounds, etc.")
+    
+    async def execute(self, context):
+        
+        # 1) clear any previous compute results
+        await ClearComputeResult(compute_type=self.compute_config.model).execute(context)
+        
+        # 2) configure detector
+        await self.compute_config.execute(context)
+
+        # 3) run the inherited patrol behavior
+        await super().execute(context)
