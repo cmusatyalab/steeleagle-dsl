@@ -27,7 +27,8 @@ transition_rule: NAME ARROW NAME _NL
 
 // ===== Attributes =====
 attr: NAME COLON value
-value: DURATION | NUMBER | NAME | STRING
+value: DURATION | NUMBER | NAME | STRING | array
+array: LBRACK [value (COMMA value)*] RBRACK
 
 // ===== Tokens =====
 LPAREN: "("
@@ -35,6 +36,8 @@ RPAREN: ")"
 COMMA:  ","
 COLON:  ":"
 ARROW:  "->"
+LBRACK: "["
+RBRACK: "]"
 
 %import common.NEWLINE        -> NL
 %import common.SIGNED_NUMBER  -> NUMBER

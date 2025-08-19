@@ -1,3 +1,5 @@
+import asyncio
+from typing import Any, Dict
 from pydantic import BaseModel, ConfigDict
 
 class Executable(BaseModel):
@@ -14,3 +16,11 @@ class ExecutableAction(Executable):
 class ExecutableEvent(Executable):
     """Marker base for events (things you wait/observe)."""
     pass
+
+
+async def event_handler(event: ExecutableEvent, context: Dict[str, Any]) -> None:
+    """Waits for event to be true, then returns."""
+    while True:
+        if await event.check(context):
+            return
+        await asyncio.sleep(0)

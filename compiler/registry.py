@@ -11,14 +11,12 @@ def _norm(name: str) -> str:
     return name.strip().lower()
 
 def register_action(cls: ActionCls) -> ActionCls:
-    """Decorator (no args): use cls.dsl_name or cls.__name__ as the DSL key."""
-    name = getattr(cls, "dsl_name", cls.__name__)
+    name = cls.__name__
     _ACTIONS[_norm(name)] = cls
     return cls
 
 def register_event(cls: EventCls) -> EventCls:
-    """Decorator (no args): use cls.dsl_name or cls.__name__ as the DSL key."""
-    name = getattr(cls, "dsl_name", cls.__name__)
+    name = cls.__name__
     _EVENTS[_norm(name)] = cls
     return cls
 

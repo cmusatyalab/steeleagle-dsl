@@ -14,7 +14,6 @@ class ElevateToAltitude(ExecutableAction):
     poll_period: float = Field(0.5, gt=0.0, description="seconds between telemetry polls")
     climb_speed: float = Field(1.0, description="m/s (adjust sign for your FCU if needed)")
     max_duration: Optional[float] = Field(60.0, gt=0.0, description="seconds; None = no limit")
-    set_vel : SetVelocityBody
 
     async def execute(self, context):
         start = asyncio.get_event_loop().time()
@@ -24,8 +23,9 @@ class ElevateToAltitude(ExecutableAction):
 
             if rel_alt + self.tolerance >= self.target_altitude:
                 break
-
-            await self.set_vel.execute(0.0, 0.0, self.climb_speed, 0.0)
+            
+            set_vel = SetVelocityBody(0.0, 0.0, self.climb_speed, 0.0)
+            await set_vel.execute(context)
 
             if self.max_duration is not None:
                 if asyncio.get_event_loop().time() - start > self.max_duration:
@@ -38,30 +38,44 @@ class ElevateToAltitude(ExecutableAction):
 
 @register_action
 class PrePatrolSequence(ExecutableAction):
-    elevate: ElevateToAltitude
-    gimbal: SetGimbalPose
-
+    altitude: float = Field(15.0, gt=0.0, description="meters AGL/relative")
+    gimbal_pitch: float = Field(0.0, description="degrees; 0=forward, positive=down")
     async def execute(self, context):
-        await self.elevate.execute(context)
-        await self.gimbal.execute(context)
+        await ElevateToAltitude(target_altitude=15.0).execute(context)
+        await SetGimbalPose(pitch=0.0, yaw=0.0, roll=0.0).execute(context)
 
 
 @register_action
-class PatrolArea(ExecutableAction):
-    area_path: str = Field(..., min_length=1, description="dot-path into waypoint map")
+class Patrol(ExecutableAction):
+    area: str = Field(..., min_length=1, description="dot-path into waypoint map")
     hover_time: float = Field(1.0, ge=0.0, description="seconds to hover after each move")
     alt: Optional[float] = Field(default=None, description="altitude to use for each waypoint")
-    goto: SetGPSLocation
 
     async def execute(self, context):
-        # Resolve waypoints at runtime (keeps DSL clean)
         points = await context['data'].get_waypoints(self.area_path)
         if not points:
             raise RuntimeError(f"No waypoints found for '{self.area_path}'")
 
         for p in points:
-            # Build a SetGPSLocation action instance for each point and execute it.
-            await self.goto.execute(lat=float(p['lat']), lon=float(p['lng']), alt=self.alt)
+            goto = SetGPSLocation(
+                lat=float(p['lat']),
+                lng=float(p['lng']),
+                alt=self.alt if self.alt is not None else p.get('alt', 10.0),
+                bearing=p.get('bearing', 0.0)
+            )
+            await goto.execute(context)
 
             if self.hover_time > 0:
                 await asyncio.sleep(self.hover_time)
+
+
+
+@register_action
+class Track(ExecutableAction):
+    target: str = Field(..., min_length=1, description="e.g., 'person' or 'car'")
+    hover_altitude: Optional[float] = Field(10.0, gt=0.0, description="meters AGL/relative")
+    gimbal_pitch: Optional[float] = Field(0.0, description="degrees; 0=forward, positive=down")
+    lost_timeout: Optional[float] = Field(5.0, gt=0.0, description="seconds to wait before giving up")
+
+    async def execute(self, context):
+        pass

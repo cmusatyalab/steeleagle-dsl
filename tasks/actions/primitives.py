@@ -76,7 +76,7 @@ class SetVelocityBody(ExecutableAction):
 
 @register_action
 class SetGimbalPose(ExecutableAction):
-    pitch: float
+    pitch: float = 0.0
     roll: float = 0.0
     yaw: float = 0.0
 
@@ -93,8 +93,8 @@ class ClearComputeResult(ExecutableAction):
 @register_action
 class ConfigureCompute(ExecutableAction):
     model: str
-    lower_bound: tuple[int, int, int]
-    upper_bound: tuple[int, int, int]
+    hsv_lower: tuple[int, int, int]
+    hsv_upper: tuple[int, int, int]
 
     async def execute(self, context):
-        return await context['ctrl'].configure_compute(self.model, self.lower_bound, self.upper_bound)
+        return await context['ctrl'].configure_compute(self.model, self.hsv_lower, self.hsv_upper)

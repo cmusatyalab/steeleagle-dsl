@@ -3,11 +3,11 @@ from __future__ import annotations
 
 from pydantic import Field
 from compiler.registry import register_action
-from tasks.actions.procedures import PatrolArea, PrePatrolSequence
+from tasks.actions.procedures import Patrol, PrePatrolSequence
 from tasks.actions.primitives import ConfigureCompute, ClearComputeResult
 
 @register_action
-class DetectPatrol(PatrolArea):
+class DetectPatrol(Patrol):
 
     prepatrol: PrePatrolSequence = Field(..., description="Run before the patrol starts, e.g., to elevate and set gimbal pose")
     compute_config: ConfigureCompute = Field(..., description="Set model + HSV bounds, etc.")
@@ -22,3 +22,4 @@ class DetectPatrol(PatrolArea):
 
         # 3) run the inherited patrol behavior
         await super().execute(context)
+        

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import math
 from typing import Any, Dict, List, Literal, Optional
 
@@ -7,6 +8,18 @@ from pydantic import Field
 from compiler.registry import register_event
 from tasks.base import ExecutableEvent
 
+
+# ---------------- basic events ----------------
+# ---------------- helpers ----------------
+@register_event
+class TimeReached(ExecutableEvent):
+    duration: float = Field(..., ge=0.0, description="Seconds to wait before event triggers")
+
+    async def check(self, context):
+        """Wait for a fixed duration; return True once reached."""
+        await asyncio.sleep(self.duration)
+        return True
+    
 
 # ---------------- telemetry events ----------------
 # ---------------- helpers ----------------
@@ -226,7 +239,7 @@ class DetectionFound(ExecutableEvent):
       - min_score >= threshold if provided
     """
     compute_type: str = Field(..., min_length=1)
-    class_name: Optional[str] = Field(None)
+    target: Optional[str] = Field(None)
     min_score: Optional[float] = Field(None, ge=0.0, le=1.0)
 
     async def check(self, context) -> bool:

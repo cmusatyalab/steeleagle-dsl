@@ -1,42 +1,18 @@
 # compiler/validator.py
 from __future__ import annotations
-from typing import Type, Dict, Tuple, Any, Literal
+
+from typing import Any, Dict, Tuple
 from pydantic import BaseModel, ValidationError
 
 from compiler.registry import get_action, get_event
+from compiler.ir import MissionIR
 
-# ---- Robust auto-import of all task modules under tasks/ ----
-import importlib, pkgutil, sys
-
-def _eager_import_tasks_pkg():
-    """
-    Import tasks package and eagerly import all its submodules (tasks.actions, tasks.events, etc.)
-    so that @register_action / @register_event decorators run and fill the registry.
-    """
-    # Import the root tasks package
-    tasks_pkg = importlib.import_module("tasks")
-
-    # Walk submodules and import each once
-    for m in pkgutil.walk_packages(tasks_pkg.__path__, tasks_pkg.__name__ + "."):
-        # m is a ModuleInfo(tuple): (module_finder, name, ispkg)
-        name = m.name
-        if name not in sys.modules:
-            importlib.import_module(name)
-
-# Call once on import
-_eager_import_tasks_pkg()
-# -------------------------------------------------------------
 
 class DSLValidationError(ValueError):
-    """Compact error used at the DSL surface (transformer raises with this message)."""
+    """Compact error used at the DSL surface."""
 
-def _lookup(kind: Literal["action", "event"], type_name: str) -> Type[BaseModel]:
-    cls = get_action(type_name) if kind == "action" else get_event(type_name)
-    if cls is None:
-        raise DSLValidationError(f"Unregistered {kind} type: {type_name}")
-    return cls
 
-def _instantiate(cls: Type[BaseModel], attrs: Dict[str, Any]) -> BaseModel:
+def _instantiate(cls: type[BaseModel], attrs: Dict[str, Any]) -> BaseModel:
     try:
         return cls(**attrs)
     except ValidationError as e:
@@ -45,12 +21,46 @@ def _instantiate(cls: Type[BaseModel], attrs: Dict[str, Any]) -> BaseModel:
     except Exception as e:
         raise DSLValidationError(str(e)) from e
 
-def validate_action(type_name: str, attrs: Dict[str, Any]) -> Tuple[Type[BaseModel], Dict[str, Any]]:
-    cls = _lookup("action", type_name)
+
+def validate_action(type_name: str, attrs: Dict[str, Any]) -> Tuple[type[BaseModel], Dict[str, Any]]:
+    cls = get_action(type_name)
+    if cls is None:
+        raise DSLValidationError(f"Unregistered action type: {type_name}")
     model = _instantiate(cls, attrs)
     return cls, model.model_dump()
 
-def validate_event(type_name: str, attrs: Dict[str, Any]) -> Tuple[Type[BaseModel], Dict[str, Any]]:
-    cls = _lookup("event", type_name)
+
+def validate_event(type_name: str, attrs: Dict[str, Any]) -> Tuple[type[BaseModel], Dict[str, Any]]:
+    cls = get_event(type_name)
+    if cls is None:
+        raise DSLValidationError(f"Unregistered event type: {type_name}")
     model = _instantiate(cls, attrs)
     return cls, model.model_dump()
+
+
+def validate_mission_ir(mir: MissionIR) -> MissionIR:
+    """
+    Validate and normalize every action and event in the MissionIR.
+    Returns the same object with attributes replaced by normalized dumps.
+    """
+    # Actions
+    for aid, air in mir.actions.items():
+        try:
+            _, normalized = validate_action(air.type_name, air.attributes)
+            air.attributes = normalized
+        except DSLValidationError as e:
+            raise ValueError(
+                f"Action '{aid}' of type '{air.type_name}' failed validation: {e}"
+            ) from e
+
+    # Events
+    for ename, eir in mir.events.items():
+        try:
+            _, normalized = validate_event(eir.type_name, eir.attributes)
+            eir.attributes = normalized
+        except DSLValidationError as e:
+            raise ValueError(
+                f"Event '{ename}' of type '{eir.type_name}' failed validation: {e}"
+            ) from e
+
+    return mir
