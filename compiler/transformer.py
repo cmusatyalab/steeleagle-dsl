@@ -9,6 +9,10 @@ from compiler.ir import MissionIR, ActionIR, EventIR
 from compiler.resolver import resolve_symbols
 from compiler.loader import load_all
 
+
+_DONE_EVENT = "done"
+_TERMINATE = None
+
 # ---------- Helpers ----------
 def _duration_to_seconds(tok: str) -> int:
     tok = tok.strip()
@@ -20,7 +24,6 @@ def _duration_to_seconds(tok: str) -> int:
         return int(float(num) * 60)
     return int(float(tok))
 
-_IMPLICIT_EVENT_ALLOWLIST = re.compile(r"^(?:done|.*_done|.*_cleared)$")
 
 def _pairs_to_dict(attrs: Optional[Iterable[Any]]) -> Dict[str, Any]:
     if attrs is None:
@@ -36,14 +39,12 @@ def _pairs_to_dict(attrs: Optional[Iterable[Any]]) -> Dict[str, Any]:
 @v_args(inline=True)
 class DroneDSLTransformer(Transformer):
     """Parses DSL -> validates via validator.py -> builds IR. Supports implicit 'done' transitions."""
-    def __init__(self, *, implicit_done: bool = True, validate_events: bool = True):
+    def __init__(self):
         super().__init__()
         self._actions: Dict[str, ActionIR] = {}
         self._events: Dict[str, EventIR] = {}
-        self._start: Optional[str] = None
+        self._start_aid: Optional[str] = None
         self._during: Dict[str, Dict[str, str]] = {}
-        self._implicit_done = implicit_done
-        self._validate_events = validate_events
 
     # ----- Actions -----
     def action_decl(self, type_name: Token, action_id: Token, attrs: Optional[List] = None):
@@ -59,10 +60,10 @@ class DroneDSLTransformer(Transformer):
     # ----- Events -----
     def event_decl(self, type_name: Token, event_name: Token, attrs: Optional[List] = None):
         type_str = str(type_name)
-        ename = str(event_name)
+        eid = str(event_name)
         attrs_dict = _pairs_to_dict(attrs)
         # Defer validation: store raw attrs
-        self._events[ename] = EventIR(type_name=type_str, event_name=ename, attributes=attrs_dict)
+        self._events[ename] = EventIR(type_name=type_str, event_name=eid, attributes=attrs_dict)
 
 
     def event_body(self, *items):
@@ -98,20 +99,19 @@ class DroneDSLTransformer(Transformer):
 
     # ----- Mission -----
     def mission_start(self, action_id: Token):
-        self._start = str(action_id)
+        self._start_aid = str(action_id)
 
     def transition_body(self, *items):
         return [it for it in items if isinstance(it, tuple) and len(it) == 2]
 
-    def transition_rule(self, ev: Token, _arrow, nxt: Token, *_nl):
-        return (str(ev), str(nxt))
+    def transition_rule(self, eid: Token, _arrow, nxt_eid: Token, *_nl):
+        return (str(eid), str(nxt_aid))
 
-    # children: NAME, _NL, [(ev, nxt), ...]
     def during_block(self, action_id: Token, _nl, rules_list):
-        sid = str(action_id)
-        self._during.setdefault(sid, {})
-        for ev, nxt in rules_list:
-            self._during[sid][ev] = nxt
+        aid = str(action_id)
+        self._during.setdefault(aid, {})
+        for eid, nxt_aid in rules_list:
+            self._during[aid][eid] = nxt_aid
 
     def mission_block(self, *_children):
         return None
@@ -120,37 +120,26 @@ class DroneDSLTransformer(Transformer):
     def start(self, *children):
         transitions: Dict[Tuple[str, str], str] = {}
 
-        land_ids = [a.action_id for a in self._actions.values() if a.type_name.lower() == "land"]
-        default_land: Optional[str] = land_ids[0] if (self._implicit_done and len(land_ids) == 1) else None
+        for aid, evmap in self._during.items():
+            for eid, nxt_aid in evmap.items():
+                transitions[(aid, eid)] = nxt_aid
+            if _DONE_EVENT not in evmap: #implicit done transition
+                transitions[(aid, _DONE_EVENT)] = _TERMINATE
 
-        for state, evmap in self._during.items():
-            for ev, nxt in evmap.items():
-                transitions[(state, ev)] = nxt
-            if self._implicit_done and "done" not in evmap and default_land:
-                transitions[(state, "done")] = default_land
-
-        if self._start is None:
+        if self._start_aid is None:
             raise ValueError("Mission: missing 'Start <action_id>'")
-        if self._start not in self._actions:
-            raise ValueError(f"Mission: Start references unknown action '{self._start}'")
+        
+        if self._start_aid not in self._actions:
+            raise ValueError(f"Mission: Start references unknown action '{self._start_aid}'")
 
-        for (_state, _ev), nxt in transitions.items():
+        for (aid, eid), nxt in transitions.items():
             if nxt not in self._actions:
                 raise ValueError(f"Mission: transition target '{nxt}' is not a defined action")
-
-        if self._validate_events:
-            referenced_events = {ev for (_st, ev) in transitions.keys()}
-            missing = sorted(
-                ev for ev in referenced_events
-                if ev not in self._events and not _IMPLICIT_EVENT_ALLOWLIST.match(ev)
-            )
-            if missing:
-                raise ValueError(f"Mission: referenced event(s) not declared: {', '.join(missing)}")
-
+       
         mir = MissionIR(
             actions=self._actions,
             events=self._events,
-            start_action_id=self._start,
+            start_action_id=self._start_aid,
             transitions=transitions
         )
 
