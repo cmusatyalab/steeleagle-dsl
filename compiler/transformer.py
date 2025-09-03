@@ -137,7 +137,6 @@ class DroneDSLTransformer(Transformer):
         load_all()  # Ensure all actions/events are loaded before validation
 
         mir = resolve_symbols(mir)  # Resolve string references (IDs) into nested dicts
-        print("Resolved symbols in mission IR:", mir)
         
         mir = validate_mission_ir(mir) # Validate & normalize via Pydantic (centralized in validator.py)
         return mir
